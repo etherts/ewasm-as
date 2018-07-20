@@ -1,0 +1,15 @@
+{
+  "name": "ewasm",
+  "version": "0.1.0",
+  "description": "Ethereum-flavored WebAssembly AssemblyScript API",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "assemblyscript": "github:AssemblyScript/assemblyscript",
+    "js-sha3": "^0.7.0"
+  }
+}
