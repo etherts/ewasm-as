@@ -3,9 +3,6 @@ import { parseFile } from "assemblyscript/src"
 import { keccak256 } from "js-sha3"
 
 export function afterParse (parser) {
-  // Create a placeholder "main" function as a starting point
-  const innerParser = parseFile('export function main(): void {}', 'input.ts', true, null);
-
   // Only consider entry source
   const entrySrc = parser.program.sources.find(s => s.isEntry)
   if (entrySrc) {
@@ -21,9 +18,24 @@ export function afterParse (parser) {
       (t.kind === NodeKind.CLASSDECLARATION && t.decorators && t.decorators.length
       && t.decorators[0].name.text === "ewasm"))
     if (contractStmt) {
+      const contractName = contractStmt.name.text
+      const abiRouter = (
+`export function main(): void {
+  if (getCallDataSize() < 4)
+    revert(0, 0)
+
+  var ptrSelector = <i32>allocate_memory(4)
+  callDataCopy(ptrSelector, 0, 4)
+  var selector = load<i32>(ptrSelector)
+
+  var contract = new ${contractName}()
+
+  switch(selector) {
+`)
+
       // Process the methods
-      for (const method of contractStmt.members.filter(m => m.kind === NodeKind.METHODDECLARATION)) {
-        // construct the signature
+      contractStmt.members.filter(m => m.kind === NodeKind.METHODDECLARATION).forEach(method => {
+        // construct the ABI signature for this method
         var signature = ""
         signature += method.name.text
         signature += "("
@@ -34,13 +46,14 @@ export function afterParse (parser) {
         signature += ")"
         if (method.signature.returnType)
           signature += ":(" + method.signature.returnType.name.text + ")"
-        console.log("Generated signature for method:", signature)
-        // console.log("Keccak:", keccak256(signature))
         const abssig = keccak256(signature).substring(0,4)
-        console.log("abssig:", abssig)
-      }
+        console.log("Generated signature for method:", signature, ", abssig:", abssig)
+        abiRouter += `case 0x${abssig}: contract.${method.name.text}(); break; `
+      });
 
-      // Add main export function as ABI wrapper
+      abiRouter += 'default: revert(0, 0)}'
+      console.log("abiRouter:", abiRouter)
+      const innerParser = parseFile(abiRouter, 'input.ts', true, null)
     }
   }
 }
