@@ -1,8 +1,8 @@
-import { NodeKind } from "assemblyscript/src/ast"
-import { parseFile } from "assemblyscript/src"
-import { keccak256 } from "js-sha3"
+const NodeKind = require("assemblyscript").NodeKind
+const parseFile = require("assemblyscript").parseFile
+const keccak256 = require("js-sha3").keccak256
 
-export function afterParse (parser) {
+exports.afterParse = function (parser) {
   // Only consider entry source
   const entrySrc = parser.program.sources.find(s => s.isEntry)
   if (entrySrc) {
