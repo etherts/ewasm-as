@@ -54,7 +54,6 @@ export function afterParse (parser) {
       abiRouter += 'default: revert(0, 0)}}'
       console.log("abiRouter:", abiRouter)
       const innerParser = parseFile(abiRouter, 'input.ts', true, null)
-      parseFile("function main():void {", 'input.ts', true, null)
     }
   }
 }
