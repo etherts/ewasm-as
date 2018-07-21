@@ -5,12 +5,17 @@
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "build": "asc --transform transform --noEmit"
+    "build": "node $NODE_DEBUG_OPTION node_modules/.bin/asc --transform transform --noEmit"
   },
-  "author": "",
-  "license": "ISC",
+  "bin": {
+    "ewasmc": "bin/ewasmc",
+    "ewasminit": "bin/ewasminit"
+  },
+  "author": "Lane Rettig <lane@cryptonyc.org>",
+  "license": "MIT",
   "dependencies": {
     "assemblyscript": "github:AssemblyScript/assemblyscript",
+    "glob": "^7.1.2",
     "js-sha3": "^0.7.0"
   }
 }

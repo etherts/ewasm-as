@@ -19,7 +19,7 @@ export function afterParse (parser) {
       && t.decorators[0].name.text === "ewasm"))
     if (contractStmt) {
       const contractName = contractStmt.name.text
-      const abiRouter = (
+      let abiRouter = (
 `export function main(): void {
   if (getCallDataSize() < 4)
     revert(0, 0)
@@ -51,9 +51,11 @@ export function afterParse (parser) {
         abiRouter += `case 0x${abssig}: contract.${method.name.text}(); break; `
       });
 
-      abiRouter += 'default: revert(0, 0)}'
+      abiRouter += 'default: revert(0, 0)}}'
       console.log("abiRouter:", abiRouter)
       const innerParser = parseFile(abiRouter, 'input.ts', true, null)
+      parseFile("function main():void {", 'input.ts', true, null)
     }
   }
 }
+
