@@ -1,4 +1,0 @@
-#!/bin/bash
-
-# Pass directly through to assemblyscript
-node_modules/ewasm/node_modules/assemblyscript/bin/asc "$@"
