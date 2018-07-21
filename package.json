@@ -5,7 +5,7 @@
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "build": "node $NODE_DEBUG_OPTION node_modules/.bin/asc --transform transform --noEmit"
+    "build": "node $NODE_DEBUG_OPTION node_modules/.bin/ewasmc --transform transform --noEmit"
   },
   "bin": {
     "ewasmc": "bin/ewasmc",
