@@ -1,5 +1,16 @@
-const { NodeKind, SourceKind } = require("assemblyscript")
-const parseFile = require("assemblyscript").parseFile
+// Use assemblyscript distribution files if present, otherwise run the sources directly
+const path = require("path")
+var assemblyscript
+(() => {
+  try {
+    assemblyscript = require("assemblyscript")
+  } catch (e) {
+    require("ts-node").register({ project: path.join(__dirname, "..", "..", "node_modules", "assemblyscript", "src", "tsconfig.json") })
+    require("../../node_modules/assemblyscript/src/glue/js")
+    assemblyscript = require("../../node_modules/assemblyscript/src")
+  }
+})()
+const { NodeKind, SourceKind, parseFile } = assemblyscript
 const keccak256 = require("js-sha3").keccak256
 
 exports.afterParse = function (parser) {
@@ -24,7 +35,7 @@ exports.afterParse = function (parser) {
   if (getCallDataSize() < 4)
     revert(0, 0)
 
-  var ptrSelector = <i32>allocate_memory(4)
+  var ptrSelector = <i32>memory.allocate(4)
   callDataCopy(ptrSelector, 0, 4)
   var selector = load<i32>(ptrSelector)
 
@@ -35,6 +46,8 @@ exports.afterParse = function (parser) {
 
       // Process the methods
       contractStmt.members.filter(m => m.kind === NodeKind.METHODDECLARATION).forEach(method => {
+        // Create a wrapper function for this method to handle memory management
+
         // construct the ABI signature for this method
         var signature = ""
         signature += method.name.text
@@ -54,17 +67,23 @@ exports.afterParse = function (parser) {
       abiRouter += 'default: revert(0, 0)}}'
       console.log("abiRouter:", abiRouter)
 
-      // Parse the complete ABI router method
-      const innerParser = parseFile(abiRouter, 'input.ts', true, null)
-
       // Find the right source
       const mainSource = parser.program.sources.find(s => s.sourceKind === SourceKind.ENTRY)
 
       // Insert it into the program AST
-      if (mainSource)
-        mainSource.statements.push(innerParser.program.sources[0].statements[0])
+      if (mainSource) {
+        // Parse the complete ABI router method
+        // Note that the "filename" here must match the existing source filename
+        // so that these statements are embedded in that file for compiling and
+        // linking; otherwise resolving will fail.
+        const innerParser = parseFile(abiRouter, mainSource.range.source.normalizedPath, true, null)
+        const routerStatement = innerParser.program.sources[0].statements[0]
+        routerStatement.parent = mainSource
+        mainSource.statements.push(routerStatement)
+      }
       else
         throw new Error("Found no main source")
+      true
     }
   }
 }

@@ -17,5 +17,9 @@
     "assemblyscript": "github:AssemblyScript/assemblyscript",
     "glob": "^7.1.2",
     "js-sha3": "^0.7.0"
+  },
+  "devDependencies": {
+    "ts-node": "^7.0.0",
+    "typescript": "^2.9.2"
   }
 }
