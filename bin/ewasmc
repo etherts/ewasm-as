@@ -1,4 +1,6 @@
 #!/bin/bash
 
 # Pass directly through to assemblyscript
-node_modules/ewasm/node_modules/assemblyscript/bin/asc --transform node_modules/ewasm/transform "$@"
+node_modules/ewasm/node_modules/assemblyscript/bin/asc \
+    --lib node_modules/ewasm/assembly/lib \
+    --transform node_modules/ewasm/assembly/src/transform "$@"

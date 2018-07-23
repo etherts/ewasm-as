@@ -1,4 +1,4 @@
-const NodeKind = require("assemblyscript").NodeKind
+const { NodeKind, SourceKind } = require("assemblyscript")
 const parseFile = require("assemblyscript").parseFile
 const keccak256 = require("js-sha3").keccak256
 
@@ -46,15 +46,25 @@ exports.afterParse = function (parser) {
         signature += ")"
         if (method.signature.returnType)
           signature += ":(" + method.signature.returnType.name.text + ")"
-        const abssig = keccak256(signature).substring(0,4)
+        const abssig = keccak256(signature).substring(0,8)
         console.log("Generated signature for method:", signature, ", abssig:", abssig)
         abiRouter += `case 0x${abssig}: contract.${method.name.text}(); break; `
       });
 
       abiRouter += 'default: revert(0, 0)}}'
       console.log("abiRouter:", abiRouter)
+
+      // Parse the complete ABI router method
       const innerParser = parseFile(abiRouter, 'input.ts', true, null)
+
+      // Find the right source
+      const mainSource = parser.program.sources.find(s => s.sourceKind === SourceKind.ENTRY)
+
+      // Insert it into the program AST
+      if (mainSource)
+        mainSource.statements.push(innerParser.program.sources[0].statements[0])
+      else
+        throw new Error("Found no main source")
     }
   }
 }
-
