@@ -10,7 +10,14 @@ var assemblyscript
     assemblyscript = require("../../node_modules/assemblyscript/src")
   }
 })()
-const { NodeKind, SourceKind, parseFile } = assemblyscript
+const {
+  CommonFlags,
+  NodeKind,
+  SourceKind,
+  TypeFlags,
+  TypeKind,
+  parseFile,
+} = assemblyscript
 const keccak256 = require("js-sha3").keccak256
 
 exports.afterParse = function (parser) {
@@ -44,21 +51,45 @@ exports.afterParse = function (parser) {
   switch(selector) {
 `)
 
-      // Process the methods
-      contractStmt.members.filter(m => m.kind === NodeKind.METHODDECLARATION).forEach(method => {
-        // Create a wrapper function for this method to handle memory management
+      // Process the methods; skip the constructor
+      contractStmt.members.filter(m =>
+        m.kind === NodeKind.METHODDECLARATION && !m.is(CommonFlags.CONSTRUCTOR)
+      ).forEach(method => {
+        // Create an ABI wrapper function for this method to handle memory management
+        // and decode the parameters
 
-        // construct the ABI signature for this method
-        var signature = ""
-        signature += method.name.text
-        signature += "("
-        signature += method.signature.parameters.reduce(
-          (acc, cur) => (acc ? acc + "," : "") + cur.type.name.text,
-          ""
+        // Loop over the params for these next steps
+        let paramsWrapper = ""
+        let methodSignature = ""
+        let currentPlace = 0
+        let varNum = 0
+        method.signature.parameters.forEach(p => {
+          methodSignature += methodSignature ? "," : ""
+          methodSignature += p.type.name.text
+          switch (p.type.kind) {
+            case TypeKind.I16:
+              paramsWrapper += (
+                `var ptr${varNum} = <i32>memory.allocate(20)
+                 callDataCopy(ptr${varNum}, ${currentPlace}, 20)
+                `
+              )
+              currentPlace += 20
+              break
+            default:
+              throw new Error("Unsupported type found in params")
+          }
+        })
+        const returnSignature = method.signature.returnType ? `(${method.signature.returnType.name.text})` : ""
+        const signature = `${method.name.text}(${methodSignature})${returnSignature}`
+
+        let abiFunction = (
+          `function ${method.name.text}_wrapper() {
+            var dataSize = getCallDataSize()
+            if (datasize !== ${currentPlace})
+              throw new Error("Bad call data length")
+          `
         )
-        signature += ")"
-        if (method.signature.returnType)
-          signature += ":(" + method.signature.returnType.name.text + ")"
+
         const abssig = keccak256(signature).substring(0,8)
         console.log("Generated signature for method:", signature, ", abssig:", abssig)
         abiRouter += `case 0x${abssig}: contract.${method.name.text}(); break; `

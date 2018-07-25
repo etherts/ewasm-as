@@ -1,12 +1,6 @@
 // Ewasm-AssemblyScript API
 // Author: Lane Rettig <lane@cryptonyc.org>
 
-export class Address {
-  constructor(
-    public Address: i32,
-  ) {}
-}
-
 export class Contract {
   // Required for now per https://github.com/AssemblyScript/assemblyscript/issues/167
   constructor() {}

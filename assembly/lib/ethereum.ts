@@ -20,4 +20,5 @@ export declare function storageLoad(pathOffset: i32, resultOffset: i32): void;
 @external("debug", "printMemHex")
 export declare function printMemHex(dataOffset: i32, length: i32): void;
 
-// TODO: need to implement a nice wrapper over the native functions which use native types and handles the memory.
+export declare type Address = u32;
+export declare type Amount = u16;
