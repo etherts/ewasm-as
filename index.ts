@@ -16,7 +16,7 @@ export class Contract {
 export function read<T>(name: string): T { return load<T>(0) }
 export function write<T>(name: string, value: T): void {}
 
-export function assert(premise: bool): bool {
+export function assert(premise: bool): void {
   if (!premise)
     throw new Error("Assertion failure")
 }

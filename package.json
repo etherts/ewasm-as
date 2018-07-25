@@ -4,7 +4,7 @@
   "description": "Ethereum-flavored WebAssembly AssemblyScript API",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
+    "test": "standard",
     "build": "node $NODE_DEBUG_OPTION node_modules/.bin/asc --transform ./assembly/src/transform --lib assembly/lib"
   },
   "bin": {
@@ -14,7 +14,7 @@
   "author": "Lane Rettig <lane@cryptonyc.org>",
   "license": "MIT",
   "dependencies": {
-    "assemblyscript": "lrettig/assemblyscript",
+    "assemblyscript": "lrettig/assemblyscript#ewasm",
     "glob": "^7.1.2",
     "js-sha3": "^0.7.0"
   },
