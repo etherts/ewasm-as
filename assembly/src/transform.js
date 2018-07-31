@@ -179,16 +179,54 @@ var retval:${returnType} = contract.${method.name.text}(${argList})
       // TODO: Do this properly.
       let newStatements = []
       method.body.statements.forEach(s => {
-        // Look for map reads and writes
-        if (s.value && s.value.kind === NodeKind.ELEMENTACCESS &&
+        // Map write
+        if (s.kind && s.kind === NodeKind.EXPRESSION &&
+          s.expression && s.expression.kind === NodeKind.BINARY &&
+          s.expression.left && s.expression.left.kind === NodeKind.ELEMENTACCESS &&
+          s.expression.left.expression && s.expression.left.expression.expression && s.expression.left.expression.expression.kind === NodeKind.THIS &&
+          s.expression.left.expression.property && s.expression.left.expression.property.kind === NodeKind.IDENTIFIER &&
+          storedMappings[s.expression.left.expression.property.text]) {
+          console.log('Found write mapping expression')
+          const mapName = s.expression.left.expression.property.text
+          const keyExpr = s.expression.left.elementExpression
+          const valExpr = s.expression.right
+          const typeArguments = storedMappings[mapName]
+          const typeKey = typeArguments[0].name.text
+          const typeVal = typeArguments[1].name.text
+          const storageWrapperFn = (
+            `const storageWrapper = function(key:${typeKey}, val:${typeVal}):void {
+  var ptrStorageVal:${typeVal} = <${typeVal}>memory.allocate(32)
+  var ptrResult:usize = <i32>memory.allocate(32)
+  var ptrInput:usize = <i32>memory.allocate(32)
+  store<i32>(ptrInput, '${mapName}') // + key)
+  keccak256Wrapper(ptrInput, 32, ptrResult)
+  store<${typeVal}>(ptrStorageVal, val)
+  storageStore(ptrResult, ptrStorageVal)
+}
+`
+          )
+          const storageWrapperFnDefinitionStatement = parseFile(
+            storageWrapperFn,
+            entrySrc.range.source.normalizedPath, true, null).program.sources[0].statements[0]
+          const callWrapperStatement = parseFile(
+            `storageWrapper()`, entrySrc.range.source.normalizedPath, true, null).program.sources[0].statements[0]
+
+          // Perform some surgery
+          callWrapperStatement.expression.arguments.push(keyExpr, valExpr)
+          newStatements.push(storageWrapperFnDefinitionStatement)
+          newStatements.push(callWrapperStatement)
+        }
+        // Map read
+        else if (s.value && s.value.kind === NodeKind.ELEMENTACCESS &&
           s.value.expression && s.value.expression.kind === NodeKind.PROPERTYACCESS &&
           s.value.expression.expression && s.value.expression.expression.kind === NodeKind.THIS &&
           s.value.expression.property && s.value.expression.property.kind === NodeKind.IDENTIFIER &&
           storedMappings[s.value.expression.property.text]) {
+          console.log('Found read mapping expression')
           // Replace the value with a storage read
           const mapName = s.value.expression.property.text
           const keyExpr = s.value.elementExpression
-          const typeArguments = storedMappings[s.value.expression.property.text]
+          const typeArguments = storedMappings[mapName]
 
           // Rewrite the read to a storage read
           // TODO: Fix the sizes here, should not all be hardcoded to 32
@@ -214,10 +252,7 @@ var retval:${returnType} = contract.${method.name.text}(${argList})
 
           // Perform some surgery
           callWrapperStatement.expression.arguments.push(keyExpr)
-          // const wrapperFnBody = wrapperStatement.declarations[0].initializer.declaration.body
-          // wrapperFnBody.statements.unshift(storageLoadStatement)
           newStatements.push(storageLoadWrapperFnDefinitionStatement)
-          // newStatements.push(callWrapperStatement)
           s.value = callWrapperStatement.expression
           newStatements.push(s)
         } else {
