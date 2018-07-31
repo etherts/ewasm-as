@@ -1,6 +1,6 @@
 #!/bin/bash
 
 # Pass directly through to assemblyscript
-node $NODE_DEBUG_OPTION node_modules/ewasm/node_modules/assemblyscript/bin/asc \
+node $NODE_DEBUG_OPTION node_modules/assemblyscript/bin/asc \
     --lib node_modules/ewasm/assembly/lib \
     --transform node_modules/ewasm/assembly/src/transform "$@"
