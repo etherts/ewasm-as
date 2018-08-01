@@ -1,6 +1,13 @@
 #!/bin/bash
 
+# Test how we're installed
+if [ -f node_modules/.bin/asc ]; then
+  ASC=node_modules/.bin/asc
+else
+  ASC=node_modules/ewasm/node_modules/.bin/asc
+fi
+
 # Pass directly through to assemblyscript
-node $NODE_DEBUG_OPTION node_modules/.bin/asc \
+node $NODE_DEBUG_OPTION $ASC \
     --lib node_modules/ewasm/assembly/lib \
     --transform node_modules/ewasm/assembly/src/transform "$@"

@@ -269,7 +269,6 @@ var retval:${returnType} = contract.${method.name.text}(${argList})
 `
     )
     abiRouter = abiFunction + abiRouter
-    console.log('abiRouter:', abiRouter)
 
     // Parse the complete ABI router method
     // Note that the "filename" here must match the existing source filename
