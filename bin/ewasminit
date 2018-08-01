@@ -1,4 +1,4 @@
 #!/bin/bash
 
 # Pass directly through to assemblyscript
-node_modules/assemblyscript/bin/asinit "$@"
+node_modules/.bin/asinit "$@"
