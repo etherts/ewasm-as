@@ -1,4 +1,5 @@
 // Use assemblyscript distribution files if present, otherwise run the sources directly
+const fs = require('fs')
 const path = require('path')
 var assemblyscript
 (() => {
@@ -29,10 +30,38 @@ const keccak256 = require('js-sha3').keccak256
  https://github.com/ethereumjs/ethereumjs-abi (or web3.js, ethjs-abi,
  etherjs-abi libraries per @axic)
  */
-exports.afterParse = function (parser) {
-  const entrySrc = parser.program.sources.find(s => s.isEntry)
+exports.afterParse = function (parser, wasmFile) {
+  const entrySrcIdx = parser.program.sources.findIndex(s => s.isEntry)
+  const entrySrc = parser.program.sources[entrySrcIdx]
   if (!entrySrc)
     throw new Error("Found no main entry source")
+
+  if (wasmFile) {
+    // We are in "wrap" mode. Read the wasm binary.
+    const wasm = fs.readFileSync(wasmFile)
+    console.log("Wrapping Wasm binary of length", wasm.length)
+
+    // The parser object still contains the original AST, generated from the original
+    // source. Step through it and look for init code.
+    // (TODO)
+
+    // Output the wrapper code
+    const wrapperCode = (`
+export function main(): void {
+  var ptrData = <i32>memory.allocate(${wasm.length})
+  store<i32>(ptrData, '${wasm.toString('hex')}')
+  finish(ptrData, ${wasm.length})
+}
+      `)
+
+    const wrapperProgram = parseFile(
+      wrapperCode,
+      entrySrc.range.source.normalizedPath, true, null)
+
+    // Completely replace the source with this new wrapper
+    parser.program.sources[entrySrcIdx] = wrapperProgram.program.sources[0]
+    return
+  }
 
   // Make sure there's no existing main function
   const mainFn = entrySrc.statements.find(t =>
