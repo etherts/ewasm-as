@@ -12,7 +12,6 @@ export function keccak256Wrapper(dataOffset: i32, length: i32, resultOffset: i32
 
 export declare function keccak256(contextOffset: i32, dataOffset: i32, length: i32, resultOffset: i32): void;
 
-@external("return")
 export declare function finish(dataOffset: i32, length: i32): void;
 
 export declare function revert(dataOffset: i32, length: i32): void;

@@ -34,25 +34,41 @@ exports.afterParse = function (parser, wasmFile) {
   const entrySrcIdx = parser.program.sources.findIndex(s => s.isEntry)
   const entrySrc = parser.program.sources[entrySrcIdx]
   if (!entrySrc)
-    throw new Error("Found no main entry source")
+    throw new Error('Found no main entry source')
 
   if (wasmFile) {
     // We are in "wrap" mode. Read the wasm binary.
     const wasm = fs.readFileSync(wasmFile)
-    console.log("Wrapping Wasm binary of length", wasm.length)
+    console.log('Wrapping Wasm binary of length', wasm.length)
 
     // The parser object still contains the original AST, generated from the original
     // source. Step through it and look for init code.
     // (TODO)
 
+    // Transform the data into a TS array
+    // TODO: perform this directly on the AST
+    const tsArray = 'const data: u8[] = [' + wasm.reduce((acc, cur) => acc + (acc ? ', ' : '') + cur, '') + ']'
+    
     // Output the wrapper code
-    const wrapperCode = (`
+    let wrapperCode = (`
+import 'allocator/arena'
 export function main(): void {
-  var ptrData = <i32>memory.allocate(${wasm.length})
-  store<i32>(ptrData, '${wasm.toString('hex')}')
-  finish(ptrData, ${wasm.length})
+  ${tsArray}
+  const size:i32 = ${wasm.length}
+  var ptrData = memory.allocate(size)
+  for (var i:i32 = 0; i < size; ++i) {
+    store<u8>(ptrData + <usize>i, data[i])
+  }
+  // Initialize storage
+  var ptrSender = <i32>memory.allocate(32)
+  getCaller(ptrSender)
+  var ptrSenderBalance = <i32>memory.allocate(32)
+  store<i32>(ptrSenderBalance, 1000000)
+  storageStore(ptrSender, ptrSenderBalance)
+  finish(ptrData, size)
 }
       `)
+    console.log('Wrapper code:', wrapperCode)
 
     const wrapperProgram = parseFile(
       wrapperCode,
