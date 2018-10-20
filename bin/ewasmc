@@ -9,5 +9,4 @@ fi
 
 # Pass directly through to assemblyscript
 node $NODE_DEBUG_OPTION $ASC \
-    --lib node_modules/ewasm/assembly/lib \
-    --transform node_modules/ewasm/assembly/src/transform "$@"
+    --lib node_modules/ewasm/assembly/lib
