@@ -14,11 +14,11 @@
   "author": "Lane Rettig <lane@cryptonyc.org>",
   "license": "MIT",
   "dependencies": {
+    "assemblyscript": "github:AssemblyScript/assemblyscript",
     "glob": "^7.1.2",
     "js-sha3": "^0.7.0"
   },
   "devDependencies": {
-    "assemblyscript": "github:AssemblyScript/assemblyscript",
     "standard": "^11.0.1",
     "ts-node": "^7.0.0",
     "typescript": "^2.9.2"
